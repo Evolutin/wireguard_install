@@ -291,12 +291,12 @@ function newClient() {
 	ENDPOINT="${SERVER_PUB_IP}:${SERVER_PORT}"
 
 	echo ""
-	echo "Client configuration"
+	echo "Конфигурация пользователя"
 	echo ""
 	echo "The client name must consist of alphanumeric character(s). It may also include underscores or dashes and can't exceed 15 chars."
 
 	until [[ ${CLIENT_NAME} =~ ^[a-zA-Z0-9_-]+$ && ${CLIENT_EXISTS} == '0' && ${#CLIENT_NAME} -lt 16 ]]; do
-		read -rp "Client name: " -e CLIENT_NAME
+		read -rp "Имя пользователя: " -e CLIENT_NAME
 		CLIENT_EXISTS=$(grep -c -E "^### Client ${CLIENT_NAME}\$" "/etc/wireguard/${SERVER_WG_NIC}.conf")
 
 		if [[ ${CLIENT_EXISTS} != 0 ]]; then
@@ -471,32 +471,32 @@ function uninstallWg() {
 		WG_RUNNING=$?
 
 		if [[ ${WG_RUNNING} -eq 0 ]]; then
-			echo "WireGuard failed to uninstall properly."
+			echo "WireGuard не удалось правильно удалить."
 			exit 1
 		else
-			echo "WireGuard uninstalled successfully."
+			echo "WireGuard успешно удален."
 			exit 0
 		fi
 	else
 		echo ""
-		echo "Removal aborted!"
+		echo "Удаление прервано!"
 	fi
 }
 
 function manageMenu() {
-	echo "Добро пожловать в WireGuard-install!"
-	echo "The git repository is available at: https://github.com/evolutin/wireguard-install"
+	echo "Добро пожаловать в установщик WireGuard сервера!"
+	echo "Репозиторий git доступен по адресу: https://github.com/Evolutin/wireguard_install"
 	echo ""
-	echo "It looks like WireGuard is already installed."
+	echo "Похоже что WireGuard сервер уже установлен."
 	echo ""
 	echo "Что вы хотите сделать?"
 	echo "   1) Добавить пользователя"
 	echo "   2) Показать всех пользователей"
-	echo "   3) Revoke existing user"
+	echo "   3) Удалить пользователя"
 	echo "   4) Удалить WireGuard"
 	echo "   5) Выход"
 	until [[ ${MENU_OPTION} =~ ^[1-5]$ ]]; do
-		read -rp "Select an option [1-5]: " MENU_OPTION
+		read -rp "Что будем делать? [1-5]: " MENU_OPTION
 	done
 	case "${MENU_OPTION}" in
 	1)
