@@ -115,7 +115,7 @@ function installQuestions() {
 		# Detect public IPv6 address
 		SERVER_PUB_IP=$(ip -6 addr | sed -ne 's|^.* inet6 \([^/]*\)/.* scope global.*$|\1|p' | head -1)
 	fi
-	read -rp "Публичный адрес IPv4 или IPv6: " -e -i "${SERVER_PUB_IP}" SERVER_PUB_IP
+	read -rp "Адрес сервера: " -e -i "${SERVER_PUB_IP}" SERVER_PUB_IP
 
 	# Detect public interface and pre-fill for the user
 	SERVER_NIC="$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)"
@@ -124,15 +124,15 @@ function installQuestions() {
 	done
 
 	until [[ ${SERVER_WG_NIC} =~ ^[a-zA-Z0-9_]+$ && ${#SERVER_WG_NIC} -lt 16 ]]; do
-		read -rp "Название интерфейса WireGuard: " -e -i wg0 SERVER_WG_NIC
+		read -rp "Название интерфейса WireGuard: " -e -i DE SERVER_WG_NIC
 	done
 
 	until [[ ${SERVER_WG_IPV4} =~ ^([0-9]{1,3}\.){3} ]]; do
-		read -rp "Сервер WireGuard IPv4: " -e -i 10.66.66.1 SERVER_WG_IPV4
+		read -rp "IPv4 сервера WireGuard : " -e -i 10.66.66.1 SERVER_WG_IPV4
 	done
 
 	until [[ ${SERVER_WG_IPV6} =~ ^([a-f0-9]{1,4}:){3,4}: ]]; do
-		read -rp "Сервер WireGuard IPv6: " -e -i fd42:42:42::1 SERVER_WG_IPV6
+		read -rp "IPv6 сервера WireGuard: " -e -i fd42:42:42::1 SERVER_WG_IPV6
 	done
 
 	# Generate random number within private ports range
@@ -143,18 +143,18 @@ function installQuestions() {
 
 	# Adguard DNS by default
 	until [[ ${CLIENT_DNS_1} =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ ]]; do
-		read -rp "Основной DNS для клиентов: " -e -i 1.1.1.1 CLIENT_DNS_1
+		read -rp "Основной DNS: " -e -i 1.1.1.1 CLIENT_DNS_1
 	done
 	until [[ ${CLIENT_DNS_2} =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ ]]; do
-		read -rp "Дополнительный DNS для клиентов (опционально): " -e -i 1.0.0.1 CLIENT_DNS_2
+		read -rp "Дополнительный DNS (опционально): " -e -i 1.0.0.1 CLIENT_DNS_2
 		if [[ ${CLIENT_DNS_2} == "" ]]; then
 			CLIENT_DNS_2="${CLIENT_DNS_1}"
 		fi
 	done
 
 	until [[ ${ALLOWED_IPS} =~ ^.+$ ]]; do
-		echo -e "\nWireGuard uses a parameter called AllowedIPs to determine what is routed over the VPN."
-		read -rp "Allowed IPs list for generated clients (leave default to route everything): " -e -i '0.0.0.0/0,::/0' ALLOWED_IPS
+		echo -e "\nWireGuard использует параметр AllowedIPs, чтобы определить, что маршрутизируется через VPN.."
+		read -rp "Allowed IPs для созданных пользователей (оставьте по умолчанию чтобы маршрутизировать все): " -e -i '0.0.0.0/0,::/0' ALLOWED_IPS
 		if [[ ${ALLOWED_IPS} == "" ]]; then
 			ALLOWED_IPS="0.0.0.0/0,::/0"
 		fi
@@ -263,7 +263,7 @@ net.ipv6.conf.all.forwarding = 1" >/etc/sysctl.d/wg.conf
 	systemctl enable "wg-quick@${SERVER_WG_NIC}"
 
 	newClient
-	echo -e "${GREEN}If you want to add more clients, you simply need to run this script another time!${NC}"
+	echo -e "${GREEN}Если вы хотите добавить больше пользователей то запустите этот скрипт еще раз!${NC}"
 
 	# Check if WireGuard is running
 	systemctl is-active --quiet "wg-quick@${SERVER_WG_NIC}"
@@ -271,13 +271,13 @@ net.ipv6.conf.all.forwarding = 1" >/etc/sysctl.d/wg.conf
 
 	# WireGuard might not work if we updated the kernel. Tell the user to reboot
 	if [[ ${WG_RUNNING} -ne 0 ]]; then
-		echo -e "\n${RED}WARNING: WireGuard does not seem to be running.${NC}"
-		echo -e "${ORANGE}You can check if WireGuard is running with: systemctl status wg-quick@${SERVER_WG_NIC}${NC}"
-		echo -e "${ORANGE}If you get something like \"Cannot find device ${SERVER_WG_NIC}\", please reboot!${NC}"
+		echo -e "\n${RED}WARNING: WireGuard похоже не работает.${NC}"
+		echo -e "${ORANGE}Вы можете проверить работает ли WireGuard с помощью команды: systemctl status wg-quick@${SERVER_WG_NIC}${NC}"
+		echo -e "${ORANGE}Если вы получите что-то вроде \"Не могу найти устройство ${SERVER_WG_NIC}\", пожалуйста перезагрузите сервер!${NC}"
 	else # WireGuard is running
-		echo -e "\n${GREEN}WireGuard is running.${NC}"
-		echo -e "${GREEN}You can check the status of WireGuard with: systemctl status wg-quick@${SERVER_WG_NIC}\n\n${NC}"
-		echo -e "${ORANGE}If you don't have internet connectivity from your client, try to reboot the server.${NC}"
+		echo -e "\n${GREEN}WireGuard запущен.${NC}"
+		echo -e "${GREEN}Вы можете проверить статус WireGuard с помощью команды: systemctl status wg-quick@${SERVER_WG_NIC}\n\n${NC}"
+		echo -e "${ORANGE}Если у вашего пользователя нет подключения к Интернету, попробуйте перезагрузить сервер.${NC}"
 	fi
 }
 
@@ -293,7 +293,7 @@ function newClient() {
 	echo ""
 	echo "Конфигурация пользователя"
 	echo ""
-	echo "The client name must consist of alphanumeric character(s). It may also include underscores or dashes and can't exceed 15 chars."
+	echo "Имя клиента должно состоять из буквенно-цифровых символов. Он также может включать символы подчеркивания или тире и не может превышать 15 символов."
 
 	until [[ ${CLIENT_NAME} =~ ^[a-zA-Z0-9_-]+$ && ${CLIENT_EXISTS} == '0' && ${#CLIENT_NAME} -lt 16 ]]; do
 		read -rp "Имя пользователя: " -e CLIENT_NAME
@@ -301,7 +301,7 @@ function newClient() {
 
 		if [[ ${CLIENT_EXISTS} != 0 ]]; then
 			echo ""
-			echo -e "${ORANGE}A client with the specified name was already created, please choose another name.${NC}"
+			echo -e "${ORANGE}Пользователь с указанным именем уже существует, выберите другое имя..${NC}"
 			echo ""
 		fi
 	done
@@ -315,32 +315,32 @@ function newClient() {
 
 	if [[ ${DOT_EXISTS} == '1' ]]; then
 		echo ""
-		echo "The subnet configured supports only 253 clients."
+		echo "Настроенная подсеть поддерживает только 253 клиента.."
 		exit 1
 	fi
 
 	BASE_IP=$(echo "$SERVER_WG_IPV4" | awk -F '.' '{ print $1"."$2"."$3 }')
 	until [[ ${IPV4_EXISTS} == '0' ]]; do
-		read -rp "Client WireGuard IPv4: ${BASE_IP}." -e -i "${DOT_IP}" DOT_IP
+		read -rp "IPv4 пользователя WireGuard : ${BASE_IP}." -e -i "${DOT_IP}" DOT_IP
 		CLIENT_WG_IPV4="${BASE_IP}.${DOT_IP}"
 		IPV4_EXISTS=$(grep -c "$CLIENT_WG_IPV4/32" "/etc/wireguard/${SERVER_WG_NIC}.conf")
 
 		if [[ ${IPV4_EXISTS} != 0 ]]; then
 			echo ""
-			echo -e "${ORANGE}A client with the specified IPv4 was already created, please choose another IPv4.${NC}"
+			echo -e "${ORANGE}с указанным IPv4 уже создан, выберите другой IPv4.${NC}"
 			echo ""
 		fi
 	done
 
 	BASE_IP=$(echo "$SERVER_WG_IPV6" | awk -F '::' '{ print $1 }')
 	until [[ ${IPV6_EXISTS} == '0' ]]; do
-		read -rp "Client WireGuard IPv6: ${BASE_IP}::" -e -i "${DOT_IP}" DOT_IP
+		read -rp "IPv6 пользователя WireGuard: ${BASE_IP}::" -e -i "${DOT_IP}" DOT_IP
 		CLIENT_WG_IPV6="${BASE_IP}::${DOT_IP}"
 		IPV6_EXISTS=$(grep -c "${CLIENT_WG_IPV6}/128" "/etc/wireguard/${SERVER_WG_NIC}.conf")
 
 		if [[ ${IPV6_EXISTS} != 0 ]]; then
 			echo ""
-			echo -e "${ORANGE}A client with the specified IPv6 was already created, please choose another IPv6.${NC}"
+			echo -e "${ORANGE}Пользователь с указанным IPv6 уже создан, выберите другой IPv6.${NC}"
 			echo ""
 		fi
 	done
@@ -375,19 +375,19 @@ AllowedIPs = ${CLIENT_WG_IPV4}/32,${CLIENT_WG_IPV6}/128" >>"/etc/wireguard/${SER
 
 	# Generate QR code if qrencode is installed
 	if command -v qrencode &>/dev/null; then
-		echo -e "${GREEN}\nHere is your client config file as a QR Code:\n${NC}"
+		echo -e "${GREEN}\nФайл конфигурации в виде QR-кода:\n${NC}"
 		qrencode -t ansiutf8 -l L <"${HOME_DIR}/${SERVER_WG_NIC}-client-${CLIENT_NAME}.conf"
 		echo ""
 	fi
 
-	echo -e "${GREEN}Your client config file is in ${HOME_DIR}/${SERVER_WG_NIC}-client-${CLIENT_NAME}.conf${NC}"
+	echo -e "${GREEN}Файл конфигурации находится в ${HOME_DIR}/${SERVER_WG_NIC}-client-${CLIENT_NAME}.conf${NC}"
 }
 
 function listClients() {
 	NUMBER_OF_CLIENTS=$(grep -c -E "^### Client" "/etc/wireguard/${SERVER_WG_NIC}.conf")
 	if [[ ${NUMBER_OF_CLIENTS} -eq 0 ]]; then
 		echo ""
-		echo "You have no existing clients!"
+		echo "У вас нет пользователей!"
 		exit 1
 	fi
 
@@ -398,18 +398,18 @@ function revokeClient() {
 	NUMBER_OF_CLIENTS=$(grep -c -E "^### Client" "/etc/wireguard/${SERVER_WG_NIC}.conf")
 	if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
 		echo ""
-		echo "You have no existing clients!"
+		echo "У вас нет пользователей!"
 		exit 1
 	fi
 
 	echo ""
-	echo "Select the existing client you want to revoke"
+	echo "Выберите пользователя которого хотите удалить"
 	grep -E "^### Client" "/etc/wireguard/${SERVER_WG_NIC}.conf" | cut -d ' ' -f 3 | nl -s ') '
 	until [[ ${CLIENT_NUMBER} -ge 1 && ${CLIENT_NUMBER} -le ${NUMBER_OF_CLIENTS} ]]; do
 		if [[ ${CLIENT_NUMBER} == '1' ]]; then
-			read -rp "Select one client [1]: " CLIENT_NUMBER
+			read -rp "Выберите одного пользователя [1]: " CLIENT_NUMBER
 		else
-			read -rp "Select one client [1-${NUMBER_OF_CLIENTS}]: " CLIENT_NUMBER
+			read -rp "Выберите одного пользователя [1-${NUMBER_OF_CLIENTS}]: " CLIENT_NUMBER
 		fi
 	done
 
@@ -429,9 +429,9 @@ function revokeClient() {
 
 function uninstallWg() {
 	echo ""
-	echo -e "\n${RED}WARNING: This will uninstall WireGuard and remove all the configuration files!${NC}"
-	echo -e "${ORANGE}Please backup the /etc/wireguard directory if you want to keep your configuration files.\n${NC}"
-	read -rp "Do you really want to remove WireGuard? [y/n]: " -e REMOVE
+	echo -e "\n${RED}WARNING: Это приведет к удалению WireGuard и удалению всех файлов конфигурации!${NC}"
+	echo -e "${ORANGE}Пожалуйста, создайте резервную копию каталога /etc/wireguard, если вы хотите сохранить файлы конфигурации.\n${NC}"
+	read -rp "Вы действительно хотите удалить WireGuard? [y/n]: " -e REMOVE
 	REMOVE=${REMOVE:-n}
 	if [[ $REMOVE == 'y' ]]; then
 		checkOS
